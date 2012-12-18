@@ -17,17 +17,27 @@ class Zendesk
      */
     private $password;
     /**
-     * @var string nome del sottodominio zendesk
+     * @var string url di base delle API
      *
-     * [host].zendesk.com
+     * https://[host].zendesk.com/api/v2/
      */
-    private $host;
+    private $baseUrl;
+    /**
+     * @var array opzioni di default per curl
+     */
+    private $default_options;
 
     public function __construct($host, $user, $password)
     {
         $this->user = $user;
         $this->password = $password;
-        $this->host = $host;
+        $this->baseUrl = "https://". $host . ".zendesk.com/api/v2/";
+        $this->default_options = array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD => $this->user . ':' . $this->password,
+            CURLOPT_HTTPHEADER => array('Content-type: application/json'),
+        );
+
     }
 
     /**
@@ -37,15 +47,10 @@ class Zendesk
      */
     public function getAllUsers()
     {
-        $url = "https://". $this->host . ".zendesk.com/api/v2/users.json";
+        $url = $this->baseUrl . "users.json";
         $c = curl_init($url);
-        $options = array(
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_USERPWD => $this->user . ':' . $this->password,
-            CURLOPT_HTTPHEADER => array('Content-type: application/json'),
-        );
 
-        curl_setopt_array( $c, $options );
+        curl_setopt_array( $c, $this->default_options );
 
         $users = curl_exec($c);
         curl_close($c);
@@ -58,22 +63,17 @@ class Zendesk
      * Recupera un utente data l'email.
      *
      * L'oggetto restituito contiene solo attributi pubblici.
-     * Per la lista di attributi vedere TODO aggiungere lista attributi
+     * Per la lista di attributi vedere TODO aggiungere lista attributi utente
      *
      * @param $email_cliente string email dell'utente da cercare
-     * @return object utente
+     * @return mixed l'oggetto utente oppure false in caso di errore
      */
     public function getUserByEmail($email_cliente)
     {
-        $url = "https://" . $this->host . ".zendesk.com/api/v2/users/search.json?query=type:user%20" . $email_cliente;
+        $url = $this->baseUrl . "users/search.json?query=type:user%20" . $email_cliente;
         $c = curl_init($url);
-        $options = array(
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_USERPWD => $this->user . ':' . $this->password,
-            CURLOPT_HTTPHEADER => array('Content-type: application/json'),
-        );
 
-        curl_setopt_array( $c, $options );
+        curl_setopt_array( $c, $this->default_options );
 
         $user = curl_exec($c);
         curl_close($c);
@@ -82,8 +82,12 @@ class Zendesk
     }
 
     /**
-     * @param $user
-     * @param array $tags
+     * Aggiunge dei tag all'utente
+     *
+     * @param object $user oggetto utente recuperato tramite getUserByEmail
+     * @param array $tags  array di tag da aggiungere all'utente su zendesk
+     *
+     * @return mixed L'oggetto utente oppure false in caso di errore
      */
     public function addTagToUser($user, array $tags)
     {
@@ -91,7 +95,7 @@ class Zendesk
         $old_tags = $user->tags;
         $tags = array_merge($old_tags, $tags);
 
-        $url = "https://".$this->host.".zendesk.com/api/v2/users/".$id.".json";
+        $url = $this->baseUrl . "users/".$id.".json";
 
         $data = array('user' => array(
             'tags' => $tags
@@ -101,9 +105,9 @@ class Zendesk
         $c = curl_init($url);
 
         $options = array(
+            CURLOPT_RETURNTRANSFER => true,
             CURLOPT_USERPWD => $this->user . ':' . $this->password,
             CURLOPT_CUSTOMREQUEST => 'PUT',
-            CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => array(
                 'Content-type: application/json',
                 'Content-Length: ' . strlen($data_str)
@@ -112,6 +116,6 @@ class Zendesk
         );
 
         curl_setopt_array( $c, $options );
-        curl_exec($c);
+        return curl_exec($c);
     }
 }
