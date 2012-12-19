@@ -118,4 +118,33 @@ class Zendesk
         curl_setopt_array( $c, $options );
         return curl_exec($c);
     }
+
+    public function  createUser($name, $email, array $tags)
+    {
+        /*
+         * curl -v -u giustinob@gmail.com:qwerty -H "Content-Type: application/json" -X POST -d '{"user": {"name": "Pinco pallino", "email": "imtheonlyjub@hotmail.com", "tags":["uno", "due", "tre"], "verified":true}}'
+         */
+        $url = "https://jubstuff.zendesk.com/api/v2/users.json ";
+        $data = array('user' => array(
+            'name' => $name,
+            'email' => $email,
+            'tags' => $tags,
+            'verified' => true
+        ));
+        $data_str = json_encode($data);
+
+        $c = curl_init($url);
+        $options = array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD => $this->user . ':' . $this->password,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => array(
+                'Content-type: application/json',
+                'Content-Length: ' . strlen($data_str)
+            ),
+            CURLOPT_POSTFIELDS => $data_str,
+        );
+        curl_setopt_array( $c, $options );
+        return curl_exec($c);
+    }
 }
