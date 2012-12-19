@@ -119,12 +119,18 @@ class Zendesk
         return curl_exec($c);
     }
 
+    /**
+     * Crea un utente su Zendesk
+     *
+     * @param $name string nome utente
+     * @param $email string email utente
+     * @param array $tags array di tag da associare all'utente
+     * @return mixed l'utente creato, false altrimenti
+     */
     public function  createUser($name, $email, array $tags)
     {
-        /*
-         * curl -v -u giustinob@gmail.com:qwerty -H "Content-Type: application/json" -X POST -d '{"user": {"name": "Pinco pallino", "email": "imtheonlyjub@hotmail.com", "tags":["uno", "due", "tre"], "verified":true}}'
-         */
-        $url = "https://jubstuff.zendesk.com/api/v2/users.json ";
+
+        $url = $this->baseUrl . "users.json";
         $data = array('user' => array(
             'name' => $name,
             'email' => $email,
